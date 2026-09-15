@@ -8,9 +8,11 @@ import math
 app = FastAPI()
 # SET base directory here, just map your directory when use docker
 BASE_DIR = Path("./logs").resolve()
+STATICS_DIR = Path("./statics").resolve()
 
 # Mount the root directory to serve raw media files
 app.mount("/files", StaticFiles(directory=str(BASE_DIR)), name="files")
+app.mount("/statics", StaticFiles(directory=str(STATICS_DIR)), name="statics")
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/browse/{subpath:path}", response_class=HTMLResponse)
@@ -50,7 +52,7 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
         back_link = f'<a href="/browse{parent_link}" style="display: inline-block; margin-bottom: 15px; text-decoration: none; font-weight: bold; color: #333;">📁 .. (Up one level)</a>'
 
     folder_html = "".join([
-        f'<div style="background: #f4f4f4; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px;">'
+        f'<div style="background: #f4f4f4; padding: 10px 15px; border-radius: 6px; ">'
         f'<a href="/browse/{rel}" style="text-decoration: none; color: #0066cc; font-weight: 500;">📁 {name}</a>'
         f'</div>'
         for name, rel in folders
@@ -86,6 +88,7 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
     <html>
         <head>
             <title>Simple Image Gallery</title>
+            <link href="/statics/iconfont/iconfont.css" rel="stylesheet">
             <style>
                 #imageModal {{
                     display: none;
@@ -108,8 +111,37 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
                 }}
                 #modalCaption {{
                     color: white;
-                    margin-top: 15px;
+                    position: absolute;
+                    top: 40px;
+                    left: 50%;
+                    transform: translateX(-50%);
                     font-size: 16px;
+                    position: absolute; 
+                    background: rgba(0,0,0,0.5);
+                    padding: 5px 15px;
+                    border-radius: 4px;
+                }}
+                #modalAction {{
+                    position: absolute;
+                    bottom: 40px; 
+                    left: 50%;
+                    transform: translateX(-50%); 
+                    display: flex; 
+                    gap: 10px; 
+                    z-index: 1001;
+                    background: rgba(0,0,0,0.5);
+                    padding: 5px 15px;
+                    border-radius: 4px;
+                }}
+                #modalAction > button {{
+                    border: none;
+                    color: white;
+                    padding: 8px 12px;
+                    background: transparent;
+                    font-size: 16px;
+                }}
+                #modalAction > button > .iconfont {{
+                    font-size: 18px
                 }}
                 .close-btn {{
                     position: absolute;
@@ -126,7 +158,7 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
             <h2>Current Directory: /{subpath}</h2>
             {back_link}
             <h3>Folders</h3>
-            <div>{folder_html if folder_html else '<p style="color: gray; font-size: 14px;">No subfolders</p>'}</div>
+            <div style="display: flex; flex-wrap: wrap; flex-direction: row; gap: 8px;">{folder_html if folder_html else '<p style="color: gray; font-size: 14px;">No subfolders</p>'}</div>
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;"/>
             <h3>Images</h3>
             {pagination_html if total_images > 0 else ''}
@@ -136,16 +168,17 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
             <!-- Modal Viewer Dialog -->
             <div id="imageModal" onclick="if(event.target === this) closeModal()">
                 <span class="close-btn" onclick="closeModal()">&times;</span>
-                <div style="position: absolute; top: 20px; left: 30px; display: flex; gap: 10px; z-index: 1001;">
-                    <button onclick="rotateImage(90)" style="padding: 8px 12px; cursor: pointer; background: #fff; border: none; border-radius: 4px; font-weight: bold;">⟳ Rotate</button>
-                    <button onclick="zoomOut()" style="padding: 8px 12px; cursor: pointer; background: #fff; border: none; border-radius: 4px; font-weight: bold;">ZoomOut</button>
-                    <button onclick="zoomIn()" style="padding: 8px 12px; cursor: pointer; background: #fff; border: none; border-radius: 4px; font-weight: bold;">ZoomIn</button>
-                    <button onclick="resetZoomRotate()" style="padding: 8px 12px; cursor: pointer; background: #fff; border: none; border-radius: 4px; font-weight: bold;">Reset</button>
-                </div>
+                <div id="modalCaption"></div>
                 <div style="overflow: hidden; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
                     <img id="modalImg" style="transition: transform 0.1s ease; transform-origin: center; cursor: grab;" />
                 </div>
-                <div id="modalCaption" style="position: absolute; bottom: 20px; color: white; font-size: 16px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 4px;"></div>
+                <div id="modalAction">
+                    <button onclick="rotateImage(90)"><i class="iconfont ig-rotateright"></i></button>
+                    <button onclick="rotateImage(-90)"><i class="iconfont ig-rotateleft"></i></button>
+                    <button onclick="zoomIn()"><i class="iconfont ig-zoomin"></i></button>
+                    <button onclick="zoomOut()"><i class="iconfont ig-zoomout"></i></button>
+                    <button onclick="resetZoomRotate()"><i class="iconfont ig-reset"></i></button>
+                </div>
             </div>
 
             <script>

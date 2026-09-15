@@ -1,0 +1,51 @@
+{
+  "id": "5234428",
+  "name": "image-gallary",
+  "font_family": "iconfont",
+  "css_prefix_text": "ig-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "9230689",
+      "name": "reset",
+      "font_class": "reset",
+      "unicode": "e912",
+      "unicode_decimal": 59666
+    },
+    {
+      "icon_id": "24883032",
+      "name": "zoomout",
+      "font_class": "zoomout",
+      "unicode": "e66b",
+      "unicode_decimal": 58987
+    },
+    {
+      "icon_id": "24883034",
+      "name": "zoomin",
+      "font_class": "zoomin",
+      "unicode": "e66c",
+      "unicode_decimal": 58988
+    },
+    {
+      "icon_id": "37141670",
+      "name": "rotateright",
+      "font_class": "rotateright",
+      "unicode": "e6ef",
+      "unicode_decimal": 59119
+    },
+    {
+      "icon_id": "44063097",
+      "name": "copy",
+      "font_class": "copy",
+      "unicode": "e9c7",
+      "unicode_decimal": 59847
+    },
+    {
+      "icon_id": "48541658",
+      "name": "rotateleft",
+      "font_class": "rotateleft",
+      "unicode": "e9c8",
+      "unicode_decimal": 59848
+    }
+  ]
+}
