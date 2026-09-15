@@ -59,9 +59,9 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
     ])
 
     image_html = "".join([
-        f'<div style="margin: 10px; display: inline-block; text-align: center; vertical-align: top; cursor: pointer;" onclick="openModal(\'/files/{rel}\', \'{name}\')">'
-        f'<img src="/files/{rel}" loading="lazy" style="width: 150px; height: 150px; object-fit: cover; display: block; border-radius: 8px; border: 1px solid #ddd;" />'
-        f'<p style="font-size: 12px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 5px;" title="{name}">{name}</p>'
+        f'<div style="margin: 8px; display: inline-block; text-align: center; vertical-align: top; cursor: pointer;" onclick="openModal(\'/files/{rel}\', \'{name}\')">'
+        f'<img src="/files/{rel}" loading="lazy" style="width: 160px; height: 150px; object-fit: cover; display: block; border-radius: 8px; border: 1px solid #ddd;" />'
+        f'<p onclick="doCopy(\'/files/{rel}\', event)" class="image-name" title="click copy"><i class="iconfont ig-copy" style="font-size: 12px"></i>{name}</p>'
         f'</div>'
         for name, rel in paginated_images
     ])
@@ -90,6 +90,29 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
             <title>Simple Image Gallery</title>
             <link href="/statics/iconfont/iconfont.css" rel="stylesheet">
             <style>
+                .image-name {{
+                    font-size: 12px;
+                    max-width: 160px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    margin-top: 5px;
+                }}
+                .image-name:hover {{
+                    color: #2644D9;
+                }}
+                #toast {{
+                    position: fixed;
+                    right: 40px;
+                    top: 40px;
+                    z-index: 9999;
+                    padding: 12px 20px;
+                    background: rgba(255, 255, 255, 0.8);
+                    box-shadow: 3px 3px 10px #d4d4d4;
+                    color: #303133;
+                    border-radius: 6px;
+                    font-size: 14px;
+                }}
                 #imageModal {{
                     display: none;
                     position: fixed;
@@ -185,6 +208,40 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
                 let currentScale = 1;
                 let currentRotation = 0;
 
+                function doCopy (src, ev) {{
+                    ev.preventDefault()
+                    ev.stopPropagation()
+                    if (navigator.clipboard) {{
+                        navigator.clipboard.writeText(location.origin + src).then(function() {{
+                            showToast('Image Url Copyed!', 'success')
+                        }}).catch(function() {{
+                            showToast('Copy Failed! Navigator Not Support Clipboard', 'error')
+                        }})
+                    }}
+                }}
+                function showToast(message, type, duration = 2000) {{
+                    let toast = document.getElementById('toast');
+                    if (!toast) {{
+                        toast = document.createElement('div');
+                        toast.id = 'toast';
+                        document.body.appendChild(toast);
+                    }}
+                    toast.textContent = message;
+                    toast.style.display = 'block';
+
+                    if (type === 'error') {{
+                        toast.style.color = '#f56c6c'
+                    }} else if (type === 'success') {{
+                        toast.style.color = '#5cb87a'
+                    }} else {{
+                        toast.style.color = '#303133'
+                    }}
+
+                    clearTimeout(toast._timer);
+                    toast._timer = setTimeout(() => {{
+                        toast.style.display = 'none';
+                    }}, duration);
+                }}
                 function openModal(src, caption) {{
                     currentScale = 1;
                     currentRotation = 0;
