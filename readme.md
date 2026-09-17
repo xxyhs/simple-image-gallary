@@ -1,6 +1,5 @@
 ## About
 This is a simple image-displaying web server built with FastAPI, designed for previewing images on servers without a graphical user interface (GUI).
-The `main.py` file was generated entirely by Gemini!
 
 
 ## How To use.
@@ -28,3 +27,10 @@ docker run docker run -itd \
   -v /home/devserver/logs:/app/logs \
   simple-media-gallary:latest
 ```
+
+## Tips
+#### image url copy
+
+Due to the strict restrictions of "Secure Contexts," the image URL copying function does not work in an HTTP environment; switching to a self-signed SSL certificate resolves this issue. got self-signed SSL certificate with [mkcert](https://github.com/FiloSottile/mkcert)
+
+``` 

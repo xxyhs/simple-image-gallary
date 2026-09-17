@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 from pathlib import Path
 import math
+import re
 
 app = FastAPI()
 # SET base directory here, just map your directory when use docker
@@ -16,9 +17,9 @@ app.mount("/statics", StaticFiles(directory=str(STATICS_DIR)), name="statics")
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/browse/{subpath:path}", response_class=HTMLResponse)
-def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
+def image_gallery(subpath: str = "", page: int = 1, page_size: int = 30, keyword: str=""):
     target_dir = (BASE_DIR / subpath).resolve()
-
+    keyword = re.sub(r'\s+', '', keyword)
     # Security safeguard against path traversal attacks
     if not target_dir.is_relative_to(BASE_DIR) or not target_dir.exists() or not target_dir.is_dir():
         raise HTTPException(status_code=404, detail="Directory not found")
@@ -32,7 +33,7 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
         rel_path = item_path.relative_to(BASE_DIR).as_posix()
         if item_path.is_dir():
             folders.append((item, rel_path))
-        elif item.lower().endswith(image_extensions):
+        elif item.lower().endswith(image_extensions) and (not keyword or item.lower().find(keyword) > -1):
             images.append((item, rel_path))
 
     # Pagination calculation for images
@@ -71,14 +72,14 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
     pagination_links = []
 
     if page > 1:
-        pagination_links.append(f'<a href="{base_url}?page={page-1}&page_size={page_size}" style="padding: 6px 14px; background: #0066cc; color: white; border-radius: 4px; text-decoration: none;">Previous</a>')
+        pagination_links.append(f'<a href="{base_url}?page={page-1}&page_size={page_size}&keyword={keyword}" style="padding: 6px 14px; background: #0066cc; color: white; border-radius: 4px; text-decoration: none;">Previous</a>')
     else:
         pagination_links.append(f'<span style="padding: 6px 14px; background: #ddd; color: #888; border-radius: 4px;">Previous</span>')
 
     pagination_links.append(f'<span style="padding: 6px 12px; font-weight: 500;">Page {page} of {total_pages} ({total_images} images)</span>')
 
     if page < total_pages:
-        pagination_links.append(f'<a href="{base_url}?page={page+1}&page_size={page_size}" style="padding: 6px 14px; background: #0066cc; color: white; border-radius: 4px; text-decoration: none;">Next</a>')
+        pagination_links.append(f'<a href="{base_url}?page={page+1}&page_size={page_size}&keyword={keyword}" style="padding: 6px 14px; background: #0066cc; color: white; border-radius: 4px; text-decoration: none;">Next</a>')
     else:
         pagination_links.append(f'<span style="padding: 6px 14px; background: #ddd; color: #888; border-radius: 4px;">Next</span>')
 
@@ -175,6 +176,29 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
                     font-weight: bold;
                     cursor: pointer;
                 }}
+                .image-header {{
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px
+                }}
+                .image-header > h3 {{
+                    all: unset;
+                    font-weight: bold;
+                    font-size: 1.17em;
+                }}
+                .image-header > form {{
+                    all: unset;
+                }}
+                .image-header > form > input{{
+                    all: unset;
+                    border: 1px solid #d4d4d4;
+                    border-radius: 4px;
+                    outline: none;
+                    padding: 0px 8px;
+                    line-height: 28px;
+                }}
             </style>
         </head>
         <body style="font-family: sans-serif; padding: 20px; color: #333; max-width: 1200px; margin: auto;">
@@ -183,7 +207,12 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
             <h3>Folders</h3>
             <div style="display: flex; flex-wrap: wrap; flex-direction: row; gap: 8px;">{folder_html if folder_html else '<p style="color: gray; font-size: 14px;">No subfolders</p>'}</div>
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;"/>
-            <h3>Images</h3>
+            <div class="image-header">
+                <h3>Images</h3>
+                <form onsubmit="doSearch(\'{base_url}\',{page_size},event)">
+                    <input id="fileNameInput" placeholder="Filename Search" value="{keyword}" />
+                </form>
+            </div>
             {pagination_html if total_images > 0 else ''}
             <div style="display: flex; flex-wrap: wrap; gap: 10px;">{image_html if image_html else '<p style="color: gray; font-size: 14px;">No images here</p>'}</div>
             {pagination_html if total_images > 0 else ''}
@@ -207,6 +236,13 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
             <script>
                 let currentScale = 1;
                 let currentRotation = 0;
+                
+                function doSearch (baseUrl, pageSize, ev) {{
+                    ev.preventDefault()
+                    const inputValue = (document.querySelector('#fileNameInput').value || '').trim()
+                    console.log(inputValue, `${{baseUrl}}?page=1&page_size=${{pageSize}}&keyword=${{inputValue}}`)
+                    window.location.href=`${{baseUrl}}?page=1&page_size=${{pageSize}}&keyword=${{inputValue}}`
+                }}
 
                 function doCopy (src, ev) {{
                     ev.preventDefault()
@@ -217,8 +253,25 @@ def image_gallery(subpath: str = "", page: int = 1, page_size: int = 24):
                         }}).catch(function() {{
                             showToast('Copy Failed! Navigator Not Support Clipboard', 'error')
                         }})
+                    }} else {{
+                        fallbackCopyText(location.origin + src)
                     }}
                 }}
+
+                function fallbackCopyText (text) {{
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {{
+                        document.execCommand('copy');
+                        showToast('Image Url Copyed!', 'success')
+                    }} catch (err) {{
+                        showToast('Copy Failed! Navigator Not Support Clipboard', 'error')
+                    }}
+                    document.body.removeChild(textarea);
+                }}
+
                 function showToast(message, type, duration = 2000) {{
                     let toast = document.getElementById('toast');
                     if (!toast) {{
